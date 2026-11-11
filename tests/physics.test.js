@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { capacitor, circuit, fieldAt, lorentzPath, metalResistance, wireField, EPS0, MU0 } from '../src/physics.js'
 
-const near = (actual, expected, tolerance = 1e-9) => assert.ok(Math.abs(actual - expected) <= tolerance * Math.max(1, Math.abs(expected)), `${actual} ≠ ${expected}`)
+const near = (actual, expected, tolerance = 1e-9) => assert.ok(Math.abs(actual - expected) <= 1e-15 + tolerance * Math.abs(expected), `${actual} ≠ ${expected}`)
 
 const dipole = [{x:-1,y:0,q:2},{x:1,y:0,q:-2}]
 const e = fieldAt(dipole,0,0)
