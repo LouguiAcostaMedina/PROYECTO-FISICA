@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Line, Grid, Html } from '@react-three/drei'
+import { OrbitControls, Line, Grid } from '@react-three/drei'
 import * as THREE from 'three'
 import { fieldAt, fieldLines } from './physics'
 
@@ -38,7 +38,6 @@ function ElectricScene({ charges, showLines, showSurfaces }) {
     {surfaces.map(s=><mesh key={s.level} geometry={s.geometry}><meshStandardMaterial color={s.color} transparent opacity={.17} side={THREE.DoubleSide} depthWrite={false}/></mesh>)}
     {charges.map((c,i)=><group key={c.id || i} position={[c.x,c.y,c.z||0]}>
       <mesh><sphereGeometry args={[.24,24,24]}/><meshStandardMaterial color={c.q>=0?'#ff758d':'#69c6ff'} emissive={c.q>=0?'#901532':'#125782'} emissiveIntensity={.38}/></mesh>
-      <Html position={[0,0,.32]} center><span className="scene-label">{c.q>=0?'+':'−'}</span></Html>
     </group>)}
   </>
 }
@@ -49,19 +48,18 @@ function CapacitorScene({ area, distance, er }) {
     {[-1,1].map((s)=><mesh key={s} position={[0,s*gap/2,0]}><boxGeometry args={[side,.08,side]}/><meshStandardMaterial color={s>0?'#ff7b8b':'#5ac6ff'} metalness={.45} roughness={.27}/></mesh>)}
     <mesh position={[0,0,0]}><boxGeometry args={[side*.93,gap*.88,side*.93]}/><meshStandardMaterial color="#9d82ff" transparent opacity={er>1.01?.17:.045} side={THREE.DoubleSide}/></mesh>
     {Array.from({length:7},(_,i)=>{const x=((i%3)-1)*side*.29,z=(Math.floor(i/3)-1)*side*.25;return <Line key={i} points={[[x,gap*.42,z],[x,-gap*.42,z]]} color="#bcadff" transparent opacity={.8}/>})}
-    <Html position={[side*.68,gap/2,0]} center><span className="scene-label rose">+ + +</span></Html>
-    <Html position={[side*.68,-gap/2,0]} center><span className="scene-label blue">− − −</span></Html>
   </>
 }
 function MagneticScene({ mode, current }) {
   return mode === 'wire' ? <>
     <mesh rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.1,.1,5,24]}/><meshStandardMaterial color="#d4b47b" metalness={.6} roughness={.25}/></mesh>
-    {[.6,1,1.45,1.9,2.35].map((r,i)=><Line key={i} points={Array.from({length:101},(_,j)=>[r*Math.cos(j*2*Math.PI/100),r*Math.sin(j*2*Math.PI/100),0])} color={i%2?'#ae91ff':'#6dcfff'} transparent opacity={.8} lineWidth={1.6}/>)}
-    <Html position={[0,0,1]} center><span className="scene-label gold">I {current>=0?'⊙':'⊗'}</span></Html>
+    {[.6,1,1.45,1.9,2.35].map((r,i)=><React.Fragment key={i}>
+      <Line points={Array.from({length:101},(_,j)=>[r*Math.cos(j*2*Math.PI/100),r*Math.sin(j*2*Math.PI/100),0])} color={i%2?'#ae91ff':'#6dcfff'} transparent opacity={.8} lineWidth={1.6}/>
+      <mesh position={[r*Math.cos(.7),r*Math.sin(.7),0]} rotation={[0,0,.7+(current<0?Math.PI:0)]}><coneGeometry args={[.09,.22,12]}/><meshStandardMaterial color={i%2?'#ae91ff':'#6dcfff'} emissive="#274b7e" emissiveIntensity={.3}/></mesh>
+    </React.Fragment>)}
   </> : <>
     <mesh position={[-.68,0,0]}><boxGeometry args={[1.35,.6,.65]}/><meshStandardMaterial color="#ff6d83" metalness={.18}/></mesh>
     <mesh position={[.68,0,0]}><boxGeometry args={[1.35,.6,.65]}/><meshStandardMaterial color="#65baff" metalness={.18}/></mesh>
-    <Html position={[-.7,0,.36]} center><span className="scene-label">N</span></Html><Html position={[.7,0,.36]} center><span className="scene-label">S</span></Html>
     {[.65,1,1.45,1.9].map((h,i)=><React.Fragment key={i}>{[-1,1].map(s=><Line key={s} points={Array.from({length:51},(_,j)=>{const t=j/50;return [-1.25+2.5*t,s*(.22+h*Math.sin(Math.PI*t)),0]})} color={i%2?'#a88cff':'#6ccfff'} transparent opacity={.7}/>)}</React.Fragment>)}
   </>
 }
