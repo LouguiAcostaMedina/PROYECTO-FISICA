@@ -2,12 +2,40 @@ import React, { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Line, Grid, Text } from '@react-three/drei'
 import * as THREE from 'three'
-import { fieldLines } from './physics'
+import { fieldAt, fieldLines } from './physics'
 
-function ElectricScene({ charges, showLines }) {
+function potentialSurface(charges, level) {
+  const n = 23, lo = -4, step = 8 / (n - 1)
+  const values = new Float32Array(n*n*n)
+  const index = (x,y,z) => (z*n+y)*n+x
+  for(let z=0;z<n;z++) for(let y=0;y<n;y++) for(let x=0;x<n;x++) values[index(x,y,z)] = fieldAt(charges,lo+x*step,lo+y*step,lo+z*step).v
+  const tetra = [[0,5,1,6],[0,1,2,6],[0,2,3,6],[0,3,7,6],[0,7,4,6],[0,4,5,6]]
+  const edges = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
+  const positions=[]
+  for(let z=0;z<n-1;z++) for(let y=0;y<n-1;y++) for(let x=0;x<n-1;x++) {
+    const xyz=[[x,y,z],[x+1,y,z],[x+1,y+1,z],[x,y+1,z],[x,y,z+1],[x+1,y,z+1],[x+1,y+1,z+1],[x,y+1,z+1]]
+    const v=xyz.map(([a,b,c])=>values[index(a,b,c)])
+    if(Math.min(...v)>level||Math.max(...v)<level)continue
+    for(const ids of tetra){
+      const hits=[]
+      for(const [ia,ib] of edges){const a=ids[ia],b=ids[ib];if((v[a]<level)===(v[b]<level))continue
+        const t=(level-v[a])/(v[b]-v[a]);hits.push([0,1,2].map(k=>lo+(xyz[a][k]+t*(xyz[b][k]-xyz[a][k]))*step))}
+      if(hits.length===3) positions.push(...hits.flat())
+      if(hits.length===4) positions.push(...hits[0],...hits[1],...hits[2],...hits[0],...hits[2],...hits[3])
+    }
+  }
+  const geometry=new THREE.BufferGeometry()
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3))
+  geometry.computeVertexNormals()
+  return geometry
+}
+
+function ElectricScene({ charges, showLines, showSurfaces }) {
   const paths = useMemo(() => fieldLines(charges, 10), [charges])
+  const surfaces=useMemo(()=>showSurfaces?[{level:200,color:'#ff6f91'},{level:-200,color:'#62bdff'}].map(s=>({...s,geometry:potentialSurface(charges,s.level)})):[],[charges,showSurfaces])
   return <>
     {showLines && paths.map((path,i) => <Line key={i} points={path.map(([x,y])=>[x,y,0])} color="#75d8ff" transparent opacity={.7} lineWidth={1.35}/>)}
+    {surfaces.map(s=><mesh key={s.level} geometry={s.geometry}><meshStandardMaterial color={s.color} transparent opacity={.17} side={THREE.DoubleSide} depthWrite={false}/></mesh>)}
     {charges.map((c,i)=><group key={c.id || i} position={[c.x,c.y,c.z||0]}>
       <mesh><sphereGeometry args={[.24,24,24]}/><meshStandardMaterial color={c.q>=0?'#ff758d':'#69c6ff'} emissive={c.q>=0?'#901532':'#125782'} emissiveIntensity={.38}/></mesh>
       <Text position={[0,0,.32]} fontSize={.2} color="white" anchorX="center" anchorY="middle">{c.q>=0?'+':'−'}</Text>
@@ -45,13 +73,13 @@ function TrajectoryScene({ path }) {
     <mesh><sphereGeometry args={[.09,16,16]}/><meshStandardMaterial color="#a8b8ce"/></mesh>
   </>
 }
-export default function Scene3D({ kind, charges=[], showLines=true, area=100, distance=2, er=1, magnetMode='dipole', current=5, path=[] }) {
+export default function Scene3D({ kind, charges=[], showLines=true, showSurfaces=true, area=100, distance=2, er=1, magnetMode='dipole', current=5, path=[] }) {
   return <div className="scene3d" aria-label="Visualización interactiva tridimensional">
     <Canvas camera={{position:[0,-7,8],fov:45}} dpr={[1,1.7]} gl={{antialias:true}}>
       <color attach="background" args={['#0b1324']}/>
       <ambientLight intensity={1.5}/><directionalLight position={[4,7,8]} intensity={2}/><pointLight position={[-4,-3,5]} color="#a782ff" intensity={35}/>
       <Grid infiniteGrid sectionColor="#25405b" cellColor="#182a40" sectionThickness={.8} cellThickness={.45} fadeDistance={26} fadeStrength={2} rotation={[Math.PI/2,0,0]}/>
-      {kind==='electric' && <ElectricScene charges={charges} showLines={showLines}/>}
+      {kind==='electric' && <ElectricScene charges={charges} showLines={showLines} showSurfaces={showSurfaces}/>}
       {kind==='capacitor' && <CapacitorScene area={area} distance={distance} er={er}/>}
       {kind==='magnet' && <MagneticScene mode={magnetMode} current={current}/>}
       {kind==='trajectory' && <TrajectoryScene path={path}/>}

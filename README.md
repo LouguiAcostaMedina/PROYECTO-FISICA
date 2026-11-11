@@ -4,7 +4,7 @@ Aplicación web adaptable para explorar electricidad y magnetismo mediante cálc
 
 ## Módulos
 
-- **Campo eléctrico:** hasta 10 cargas puntuales, líneas de campo, curvas equipotenciales y potencial/campo en un punto editable.
+- **Campo eléctrico:** hasta 10 cargas puntuales, líneas de campo, curvas equipotenciales 2D, superficies equipotenciales 3D y potencial/campo en un punto editable.
 - **Capacitores:** placas paralelas en 3D, área, distancia, dieléctrico, voltaje, capacitancia, carga y energía.
 - **Circuitos:** tres resistencias en serie, paralelo o red mixta `R1 + (R2 || R3)`; voltaje, corriente y potencia por elemento; gráfica de ley de Ohm.
 - **Campo magnético:** líneas cualitativas de un imán, campo de un conductor largo y cálculo según corriente/distancia.
@@ -25,7 +25,7 @@ Construcción de producción: `npm run build`. El contenido estático queda en `
 
 React gestiona la interfaz. React Three Fiber y Three.js renderizan las escenas 3D; SVG representa las visualizaciones 2D. Los cálculos se concentran en `src/physics.js` y convierten las entradas a unidades SI. Las cargas se introducen en nC; las coordenadas espaciales, en cm; la separación del capacitor, en mm; el campo magnético de Lorentz, en mT; y el tiempo de trayectoria, en µs.
 
-Las líneas de campo siguen la dirección local del vector eléctrico. Las curvas equipotenciales se aproximan en una malla por interpolación lineal. La trayectoria integra la ecuación de Lorentz con Runge–Kutta de cuarto orden. Los modelos son ideales: no incluyen efectos de borde, temperatura, pérdidas ni relatividad. Las líneas del imán son ilustrativas; el cálculo cuantitativo magnético corresponde al conductor largo.
+Las líneas de campo siguen la dirección local del vector eléctrico. Las curvas equipotenciales se aproximan en una malla por interpolación lineal. Las superficies 3D se extraen de un volumen mediante tetraedros. La trayectoria integra la ecuación de Lorentz con Runge–Kutta de cuarto orden. Los modelos son ideales: no incluyen efectos de borde, temperatura, pérdidas ni relatividad. Las líneas del imán son ilustrativas; el cálculo cuantitativo magnético corresponde al conductor largo.
 
 ## Verificación
 
